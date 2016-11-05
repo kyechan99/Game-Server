@@ -7,6 +7,16 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 
+public enum MOVE_CONTROL
+{
+    STOP,
+    DANCE,
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT,
+}
+
 namespace Server
 {
     class UserData
