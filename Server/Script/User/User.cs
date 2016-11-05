@@ -25,6 +25,8 @@ namespace Server
         /**** 유저가 가지고 있을 정보 (변수) ********************/
         string nickName = "";
         float posX = 0, posY = 0;
+        MOVE_CONTROL myMove = MOVE_CONTROL.STOP;
+        MOVE_CONTROL seeDirection = MOVE_CONTROL.STOP;
         /****************************************************/
 
 
@@ -118,7 +120,10 @@ namespace Server
             }
             else if (txt[0].Equals("MOVE"))
             {
-
+                posX = float.Parse(txt[1]);
+                posY = float.Parse(txt[2]);
+                myMove = (MOVE_CONTROL)int.Parse(txt[3]);
+                Move();
             }
             else if (txt[0].Equals("CHAT"))
             {
@@ -142,9 +147,10 @@ namespace Server
                 if (Server.v_user[i] != this)
                 {
                     /******** 유저 정보들을 이곳에 추가 *********/
-                    SendMsg(string.Format("USER:{0}:{1}:{2}", Server.v_user[i].nickName, Server.v_user[i].posX, Server.v_user[i].posY));      // 현재 접속되 있는 유저 정보들을 방금 들어온 유저에게 전송
+                    SendMsg(string.Format("USER:{0}:{1}:{2}:{3}:{4}", Server.v_user[i].nickName, Server.v_user[i].posX, Server.v_user[i].posY,
+                        (int)Server.v_user[i].myMove, (int)Server.v_user[i].seeDirection));      // 현재 접속되 있는 유저 정보들을 방금 들어온 유저에게 전송
 
-                    Server.v_user[i].SendMsg(string.Format("USER:{0}:{1}:{2}", nickName, 0, 0));      // 기존에 접속해 있던 모든 유저들에게 내 정보 전송.
+                    Server.v_user[i].SendMsg(string.Format("USER:{0}:{1}:{2}:{3}:{4}", nickName, /*posX*/0, /*posY*/0, (int)MOVE_CONTROL.STOP, (int)MOVE_CONTROL.DOWN));      // 기존에 접속해 있던 모든 유저들에게 내 정보 전송.
                     /****************************************/
                 }
                 else
@@ -181,6 +187,20 @@ namespace Server
             {
                 Server.v_user[i].SendMsg(string.Format("CHAT:{0}:{1}", idx, txt));
             }
+        }
+
+        void Move()
+        {
+            int idx = Server.v_user.IndexOf(this);
+
+            for (int i = 0; i < Server.v_user.Count; i++)
+            {
+                if (Server.v_user[i] != this)
+                {
+                    Server.v_user[i].SendMsg(string.Format("MOVE:{0}:{1}:{2}:{3}", idx, posX, posY, (int)myMove)); // 내 인덱스 번호와 현재 위치 이동할 방향을 보낸다.
+                }
+            }
+            if (myMove > MOVE_CONTROL.STOP) seeDirection = myMove; // STOP이 아닌 경우 마지막 바라보던 방향을 저장해둔다.
         }
 
         /**
