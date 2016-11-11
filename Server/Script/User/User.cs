@@ -25,6 +25,7 @@ namespace Server
         /**** 유저가 가지고 있을 정보 (변수) ********************/
         string nickName = "";
         float posX = 0, posY = 0;
+        int myRoomIdx = 0;
         MOVE_CONTROL myMove = MOVE_CONTROL.STOP;
         MOVE_CONTROL seeDirection = MOVE_CONTROL.STOP;
         /****************************************************/
@@ -189,6 +190,9 @@ namespace Server
             }
         }
 
+        /**
+         * @brief 이동
+         */
         void Move()
         {
             int idx = Server.v_user.IndexOf(this);
