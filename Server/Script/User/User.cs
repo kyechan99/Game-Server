@@ -130,6 +130,20 @@ namespace Server
             {
                 Chat(txt[1]);
             }
+            else if (txt[0].Equals("FOUND_ROOM"))
+            {
+                        for (int j = 0; j < Server.v_rooms.Count; j++)
+                            SendMsg(string.Format("FOUND_ROOM:{0}:{1}:{2}", Server.v_rooms[j].roomIdx, Server.v_rooms[j].roomName, Server.v_rooms[j].roomPW));
+                   
+            }
+            else if (txt[0].Equals("INTO_ROOM"))
+            {
+                IntoRoom();
+            }
+            else if (txt[0].Equals("CREATE_ROOM"))
+            {
+                CreateRoom(txt[1], txt[2]);
+            }
             else
             {
                 //!< 이 부분에 들어오는 일이 있으면 안됨 (패킷 실수)
@@ -194,6 +208,37 @@ namespace Server
          * @brief 이동
          */
         void Move()
+        {
+            int idx = Server.v_user.IndexOf(this);
+
+            for (int i = 0; i < Server.v_user.Count; i++)
+            {
+                if (Server.v_user[i] != this)
+                {
+                    Server.v_user[i].SendMsg(string.Format("MOVE:{0}:{1}:{2}:{3}", idx, posX, posY, (int)myMove)); // 내 인덱스 번호와 현재 위치 이동할 방향을 보낸다.
+                }
+            }
+            if (myMove > MOVE_CONTROL.STOP) seeDirection = myMove; // STOP이 아닌 경우 마지막 바라보던 방향을 저장해둔다.
+        }
+        
+        /**
+         * @brief 방 생성
+         */
+        void CreateRoom(string roomName, string roomPW)
+        {
+            INFO.ROOM room = new INFO.ROOM();
+            room.roomIdx = Server.v_rooms.Count;
+            room.roomName = roomName;
+            room.roomPW = roomPW;
+
+            Server.v_rooms.Add(room);
+            Console.WriteLine(string.Format("CREATE ROOM ({0}) : {1} : {2}", room.roomIdx, room.roomName, room.roomPW));
+        }
+
+        /**
+         * @brief 방 입장
+         */
+        void IntoRoom()
         {
             int idx = Server.v_user.IndexOf(this);
 

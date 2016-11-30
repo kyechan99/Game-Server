@@ -12,6 +12,7 @@ namespace Server
     class Server
     {
         public static List<User> v_user = new List<User>();
+        public static List<INFO.ROOM> v_rooms = new List<INFO.ROOM>();
         public static ManualResetEvent allDone = new ManualResetEvent(false);
 
         /**
@@ -20,6 +21,7 @@ namespace Server
          */
         public Server(int port)
         {
+            v_rooms.Clear();
             v_user.Clear();
             WaitingSocket(port);
         }
