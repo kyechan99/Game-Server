@@ -132,9 +132,8 @@ namespace Server
             }
             else if (txt[0].Equals("FOUND_ROOM"))
             {
-                        for (int j = 0; j < Server.v_rooms.Count; j++)
-                            SendMsg(string.Format("FOUND_ROOM:{0}:{1}:{2}", Server.v_rooms[j].roomIdx, Server.v_rooms[j].roomName, Server.v_rooms[j].roomPW));
-                   
+                for (int j = 0; j < Server.v_rooms.Count; j++)
+                    SendMsg(string.Format("FOUND_ROOM:{0}:{1}:{2}", Server.v_rooms[j].roomIdx, Server.v_rooms[j].roomName, Server.v_rooms[j].roomPW));
             }
             else if (txt[0].Equals("INTO_ROOM"))
             {
@@ -220,7 +219,7 @@ namespace Server
             }
             if (myMove > MOVE_CONTROL.STOP) seeDirection = myMove; // STOP이 아닌 경우 마지막 바라보던 방향을 저장해둔다.
         }
-        
+
         /**
          * @brief 방 생성
          */
@@ -240,16 +239,6 @@ namespace Server
          */
         void IntoRoom()
         {
-            int idx = Server.v_user.IndexOf(this);
-
-            for (int i = 0; i < Server.v_user.Count; i++)
-            {
-                if (Server.v_user[i] != this)
-                {
-                    Server.v_user[i].SendMsg(string.Format("MOVE:{0}:{1}:{2}:{3}", idx, posX, posY, (int)myMove)); // 내 인덱스 번호와 현재 위치 이동할 방향을 보낸다.
-                }
-            }
-            if (myMove > MOVE_CONTROL.STOP) seeDirection = myMove; // STOP이 아닌 경우 마지막 바라보던 방향을 저장해둔다.
         }
 
         /**
