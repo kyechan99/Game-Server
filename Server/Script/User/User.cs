@@ -133,15 +133,29 @@ namespace Server
             else if (txt[0].Equals("FOUND_ROOM"))
             {
                 for (int j = 0; j < Server.v_rooms.Count; j++)
-                    SendMsg(string.Format("FOUND_ROOM:{0}:{1}:{2}", Server.v_rooms[j].roomIdx, Server.v_rooms[j].roomName, Server.v_rooms[j].roomPW));
+                    SendMsg(string.Format("FOUND_ROOM:{0}:{1}:{2}:{3}:{4}",
+                        Server.v_rooms[j].roomIdx, Server.v_rooms[j].roomName, Server.v_rooms[j].roomPW, Server.v_rooms[j].nowUser, Server.v_rooms[j].limitUser));
             }
             else if (txt[0].Equals("INTO_ROOM"))
             {
-                IntoRoom();
+                IntoRoom(txt[1]);
             }
             else if (txt[0].Equals("CREATE_ROOM"))
             {
-                CreateRoom(txt[1], txt[2]);
+                CreateRoom(txt[1], txt[2], txt[3]);
+            }
+            else if (txt[0].Equals("OUT_ROOM"))
+            {
+                for (int i = 0; i < Server.v_rooms.Count; i++)
+                {
+                    if (Server.v_rooms[i].roomIdx.Equals(uint.Parse(txt[1])))
+                    {
+                        Server.v_rooms[i].nowUser++;
+                        if (Server.v_rooms[i].nowUser <= 0)
+                            Server.v_rooms.RemoveAt(i);
+                        break;
+                    }
+                }
             }
             else
             {
@@ -223,12 +237,14 @@ namespace Server
         /**
          * @brief 방 생성
          */
-        void CreateRoom(string roomName, string roomPW)
+        void CreateRoom(string roomName, string roomPW, string limitMem)
         {
-            INFO.ROOM room = new INFO.ROOM();
-            room.roomIdx = Server.v_rooms.Count;
+            INFO.Room room = new INFO.Room();
+            room.roomIdx = (uint)++Server.roomCount;
             room.roomName = roomName;
             room.roomPW = roomPW;
+            room.limitUser = byte.Parse(limitMem);
+            room.nowUser = 1;
 
             Server.v_rooms.Add(room);
             Console.WriteLine(string.Format("CREATE ROOM ({0}) : {1} : {2}", room.roomIdx, room.roomName, room.roomPW));
@@ -237,8 +253,31 @@ namespace Server
         /**
          * @brief 방 입장
          */
-        void IntoRoom()
+        void IntoRoom(string roomIdx)
         {
+            bool isExistence = false;     // 도중에 방이 사라졌는지 체크
+
+            for (int i = 0; i < Server.v_rooms.Count; i++)
+            {
+                if (Server.v_rooms[i].roomIdx.Equals(uint.Parse(roomIdx)))
+                {
+                    isExistence = true;
+                    // 내가 들어와도 인원한계치를 넘어가지 않는지를 체크
+                    if (Server.v_rooms[i].nowUser + 1 <= Server.v_rooms[i].limitUser)
+                    {
+                        Server.v_rooms[i].nowUser++;
+                        SendMsg("ENTER_ROOM:IN");       // 방에 들어가도 됨을 허락 받음
+                    }
+                    else
+                    {
+                        SendMsg("ENTER_ROOM:LIMIT");    // 방 인원수가 꽉 참
+                    }
+                    break;
+                }
+            }
+
+            if (!isExistence)
+                SendMsg("ENTER_ROOM:MISS");     // 도중에 방이 사라짐
         }
 
         /**
