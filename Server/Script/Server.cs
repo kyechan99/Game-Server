@@ -14,7 +14,7 @@ namespace Server
         public static List<User> v_user = new List<User>();
         public static List<INFO.Room> v_rooms = new List<INFO.Room>();
         public static ManualResetEvent allDone = new ManualResetEvent(false);
-        public static uint roomCount;
+        public static int roomCount;
 
         /**
          * @brief 초기화
@@ -24,7 +24,7 @@ namespace Server
         {
             v_rooms.Clear();
             v_user.Clear();
-            roomCount = 1;
+            roomCount = 0;
             WaitingSocket(port);
         }
 

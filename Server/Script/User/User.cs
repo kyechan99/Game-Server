@@ -26,6 +26,7 @@ namespace Server
         string nickName = "";
         float posX = 0, posY = 0;
         int myRoomIdx = 0;
+        int myIdxInRoom = 0;
         MOVE_CONTROL myMove = MOVE_CONTROL.STOP;
         MOVE_CONTROL seeDirection = MOVE_CONTROL.STOP;
         /****************************************************/
@@ -105,9 +106,10 @@ namespace Server
             /************* 기능이 추가되면 덧붙일 것 ***************/
             if (txt[0].Equals("LOGIN"))
             {
+                myIdxInRoom = 0;
                 nickName = txt[1];
-                Console.WriteLine(txt[1] + " is Login.");
                 Login();
+                Console.WriteLine(txt[1] + " is Login." + myIdxInRoom);
             }
             else if (txt[0].Equals("DISCONNECT"))
             {
@@ -142,15 +144,22 @@ namespace Server
             }
             else if (txt[0].Equals("CREATE_ROOM"))
             {
+                Logout();
                 CreateRoom(txt[1], txt[2], txt[3]);
+                SendMsg(string.Format("CHANGE_ROOM:{0}", myRoomIdx));
+            }
+            else if (txt[0].Equals("CHANGE_ROOM"))
+            {
+                Logout();
+                myRoomIdx = int.Parse(txt[1]);
             }
             else if (txt[0].Equals("OUT_ROOM"))
             {
                 for (int i = 0; i < Server.v_rooms.Count; i++)
                 {
-                    if (Server.v_rooms[i].roomIdx.Equals(uint.Parse(txt[1])))
+                    if (Server.v_rooms[i].roomIdx.Equals(int.Parse(txt[1])))
                     {
-                        Server.v_rooms[i].nowUser++;
+                        Server.v_rooms[i].nowUser--;
                         if (Server.v_rooms[i].nowUser <= 0)
                             Server.v_rooms.RemoveAt(i);
                         break;
@@ -171,19 +180,29 @@ namespace Server
         {
             for (int i = 0; i < Server.v_user.Count; i++)
             {
-                //!< 내가 아닌 다른 유저에게
                 if (Server.v_user[i] != this)
-                {
-                    /******** 유저 정보들을 이곳에 추가 *********/
-                    SendMsg(string.Format("USER:{0}:{1}:{2}:{3}:{4}", Server.v_user[i].nickName, Server.v_user[i].posX, Server.v_user[i].posY,
-                        (int)Server.v_user[i].myMove, (int)Server.v_user[i].seeDirection));      // 현재 접속되 있는 유저 정보들을 방금 들어온 유저에게 전송
+                    if (myRoomIdx.Equals(Server.v_user[i].myRoomIdx))
+                        myIdxInRoom++;
+            }
 
-                    Server.v_user[i].SendMsg(string.Format("USER:{0}:{1}:{2}:{3}:{4}", nickName, /*posX*/0, /*posY*/0, (int)MOVE_CONTROL.STOP, (int)MOVE_CONTROL.DOWN));      // 기존에 접속해 있던 모든 유저들에게 내 정보 전송.
-                    /****************************************/
-                }
-                else
+            for (int i = 0; i < Server.v_user.Count; i++)
+            {
+                // 같은 방 위치에 있는 사람에게만 전달해줌
+                if (myRoomIdx.Equals(Server.v_user[i].myRoomIdx))
                 {
-                    SendMsg(string.Format("ADDUSER:{0}", nickName));
+                    //!< 내가 아닌 다른 유저에게
+                    if (Server.v_user[i] != this)
+                    {
+                        /******** 유저 정보들을 이곳에 추가 *********/
+                        SendMsg(string.Format("USER:{0}:{1}:{2}:{3}:{4}", Server.v_user[i].nickName, Server.v_user[i].posX, Server.v_user[i].posY,
+                            (int)Server.v_user[i].myMove, (int)Server.v_user[i].seeDirection));      // 현재 접속되 있는 유저 정보들을 방금 들어온 유저에게 전송
+
+                        Server.v_user[i].SendMsg(string.Format("USER:{0}:{1}:{2}:{3}:{4}", nickName, /*posX*/0, /*posY*/0, (int)MOVE_CONTROL.STOP, (int)MOVE_CONTROL.DOWN));      // 기존에 접속해 있던 모든 유저들에게 내 정보 전송.
+                    }
+                    else
+                    {
+                        SendMsg(string.Format("ADDUSER:{0}", nickName));
+                    }
                 }
             }
         }
@@ -193,13 +212,17 @@ namespace Server
          */
         void Logout()
         {
-            int index = Server.v_user.IndexOf(this);
+            //int index = Server.v_user.IndexOf(this);
 
             for (int i = 0; i < Server.v_user.Count; i++)
             {
-                if (Server.v_user[i] != this)
+                if (Server.v_user[i] != this && myRoomIdx.Equals(Server.v_user[i].myRoomIdx))
                 {
-                    Server.v_user[i].SendMsg(string.Format("LOGOUT:{0}", index));
+                    Server.v_user[i].SendMsg(string.Format("LOGOUT:{0}", myIdxInRoom));
+
+                    // IDX 에 변화가 있는 것은 본인보다 위에 있을 경우에만 생기기 때문
+                    if (myIdxInRoom < Server.v_user[i].myIdxInRoom)
+                        Server.v_user[i].myIdxInRoom--;
                 }
             }
         }
@@ -222,13 +245,32 @@ namespace Server
          */
         void Move()
         {
-            int idx = Server.v_user.IndexOf(this);
+            //int idx = Server.v_user.IndexOf(this);
+            //int idx = 0;
+            //for (int i = 0; i < Server.v_user.Count; i++)
+            //{
+            //    if (Server.v_user[i] != this && myRoomIdx.Equals(Server.v_user[i].myRoomIdx))
+            //    {
+            //        idx++;
+            //    }
+            //}
+
+            int idx = 0;
+            for (int i = 0; i < Server.v_user.Count; i++)
+            {
+                if (myRoomIdx.Equals(Server.v_user[i].myRoomIdx))
+                {
+                    if (Server.v_user[i] == this)
+                        break;
+                    idx++;
+                }
+            }
 
             for (int i = 0; i < Server.v_user.Count; i++)
             {
-                if (Server.v_user[i] != this)
+                if (Server.v_user[i] != this && myRoomIdx.Equals(Server.v_user[i].myRoomIdx))
                 {
-                    Server.v_user[i].SendMsg(string.Format("MOVE:{0}:{1}:{2}:{3}", idx, posX, posY, (int)myMove)); // 내 인덱스 번호와 현재 위치 이동할 방향을 보낸다.
+                    Server.v_user[i].SendMsg(string.Format("MOVE:{0}:{1}:{2}:{3}", myIdxInRoom, posX, posY, (int)myMove)); // 내 인덱스 번호와 현재 위치 이동할 방향을 보낸다.
                 }
             }
             if (myMove > MOVE_CONTROL.STOP) seeDirection = myMove; // STOP이 아닌 경우 마지막 바라보던 방향을 저장해둔다.
@@ -240,11 +282,13 @@ namespace Server
         void CreateRoom(string roomName, string roomPW, string limitMem)
         {
             INFO.Room room = new INFO.Room();
-            room.roomIdx = (uint)++Server.roomCount;
+            room.roomIdx = ++Server.roomCount;
             room.roomName = roomName;
             room.roomPW = roomPW;
             room.limitUser = byte.Parse(limitMem);
             room.nowUser = 1;
+
+            myRoomIdx = room.roomIdx;
 
             Server.v_rooms.Add(room);
             Console.WriteLine(string.Format("CREATE ROOM ({0}) : {1} : {2}", room.roomIdx, room.roomName, room.roomPW));
@@ -259,7 +303,7 @@ namespace Server
 
             for (int i = 0; i < Server.v_rooms.Count; i++)
             {
-                if (Server.v_rooms[i].roomIdx.Equals(uint.Parse(roomIdx)))
+                if (Server.v_rooms[i].roomIdx.Equals(int.Parse(roomIdx)))
                 {
                     isExistence = true;
                     // 내가 들어와도 인원한계치를 넘어가지 않는지를 체크
