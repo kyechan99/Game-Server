@@ -270,7 +270,7 @@ namespace Server
             {
                 if (Server.v_user[i] != this && myRoomIdx.Equals(Server.v_user[i].myRoomIdx))
                 {
-                    Server.v_user[i].SendMsg(string.Format("MOVE:{0}:{1}:{2}:{3}", myIdxInRoom, posX, posY, (int)myMove)); // 내 인덱스 번호와 현재 위치 이동할 방향을 보낸다.
+                    Server.v_user[i].SendMsg(string.Format("MOVE:{0}:{1}:{2}:{3}", i, posX, posY, (int)myMove)); // 내 인덱스 번호와 현재 위치 이동할 방향을 보낸다.
                 }
             }
             if (myMove > MOVE_CONTROL.STOP) seeDirection = myMove; // STOP이 아닌 경우 마지막 바라보던 방향을 저장해둔다.
